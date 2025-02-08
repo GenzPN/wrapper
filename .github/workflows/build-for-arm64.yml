@@ -2,13 +2,15 @@ name: Build and Deploy to GHCR
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "arm64" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "arm64" ]
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
+
 
     steps:
     - name: Checkout Repository
