@@ -1,5 +1,5 @@
 # wrapper
-A tool to decrypt Apple Music's music. An active subscription is still needed.
+A tool to decrypt Apple Music's music. An active subscription is still neede
 
 Only support Linux x86_64 and arm64.
 
