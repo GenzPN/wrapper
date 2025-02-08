@@ -1,4 +1,4 @@
-name: Build and Deploy to GHCR
+name: arm64 Build
 
 on:
   push:
