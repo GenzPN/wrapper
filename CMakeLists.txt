@@ -34,6 +34,32 @@ add_library(handle_object OBJECT ${HANDLE_SOURCE})
 
 add_executable(main ${MAIN_SOURCE} $<TARGET_OBJECTS:cmdline_object> $<TARGET_OBJECTS:handle_object>)
 
+# Make library finding optional
+find_library(ANDROIDAPPMUSIC_LIB androidappmusic PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64 NO_DEFAULT_PATH)
+find_library(STORESERVICESCORE_LIB storeservicescore PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64 NO_DEFAULT_PATH)
+find_library(MEDIAPLATFORM_LIB mediaplatform PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64 NO_DEFAULT_PATH)
+find_library(CXX_SHARED_LIB c++_shared PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64 NO_DEFAULT_PATH)
+
+# Create list of available libraries
+set(AVAILABLE_LIBS)
+if(ANDROIDAPPMUSIC_LIB)
+    list(APPEND AVAILABLE_LIBS ${ANDROIDAPPMUSIC_LIB})
+endif()
+if(STORESERVICESCORE_LIB)
+    list(APPEND AVAILABLE_LIBS ${STORESERVICESCORE_LIB})
+endif()
+if(MEDIAPLATFORM_LIB)
+    list(APPEND AVAILABLE_LIBS ${MEDIAPLATFORM_LIB})
+endif()
+if(CXX_SHARED_LIB)
+    list(APPEND AVAILABLE_LIBS ${CXX_SHARED_LIB})
+endif()
+
+# Link only available libraries
+target_link_libraries(main
+    ${AVAILABLE_LIBS}
+)
+
 if(WIN32)
     target_link_libraries(main wsock32 ws2_32)
 endif()
@@ -41,19 +67,6 @@ endif()
 set_target_properties(main PROPERTIES 
     COMPILE_DEFINITIONS "MyRelease"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/rootfs/system/bin"
-)
-
-find_library(ANDROIDAPPMUSIC_LIB androidappmusic PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64)
-find_library(STORESERVICESCORE_LIB storeservicescore PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64)
-find_library(MEDIAPLATFORM_LIB mediaplatform PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64)
-find_library(CXX_SHARED_LIB c++_shared PATHS ${CMAKE_SOURCE_DIR}/rootfs/system/lib64)
-
-# Link libraries
-target_link_libraries(main
-    ${CXX_SHARED_LIB}
-    ${ANDROIDAPPMUSIC_LIB}
-    ${STORESERVICESCORE_LIB}
-    ${MEDIAPLATFORM_LIB}
 )
 
 link_directories(${CMAKE_SOURCE_DIR}/rootfs/system/lib64)
