@@ -1,42 +1,44 @@
-name: x86_64 Build
+name: x86_64 Windows Build
 
 on:
   push:
-    branches: ["main"]
+    branches: ["windows"]
   pull_request:
-    branches: ["main"]
+    branches: ["windows"]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+      
+    - name: Setup MinGW
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+        
+    - name: Download Android NDK
       run: |
-        sudo apt update
-        sudo apt install -y aria2 cmake make
+        curl -L "https://dl.google.com/android/repository/android-ndk-r27c-windows.zip" -o android-ndk-r27c-windows.zip
+        7z x android-ndk-r27c-windows.zip -o"$env:USERPROFILE"
+      shell: pwsh
 
-    - name: Install LLVM
-      run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-    
-    - name: Set up Android NDK r27c
-      run: |
-        aria2c -o android-ndk-r27c-linux.zip https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
-        unzip -q -d ~ android-ndk-r27c-linux.zip
-    
     - name: Build Project
       run: |
         mkdir build
         cd build
-        cmake ..
-        make
+        cmake -G "MinGW Makefiles" ..
+        mingw32-make
+      shell: pwsh
 
     - name: Set outputs
-      id: vars
-      run: echo "SHA_SHORT=x86_64" >> $GITHUB_ENV
+      run: echo "SHA_SHORT=x86_64" >> $env:GITHUB_ENV
+      shell: pwsh
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -44,16 +46,25 @@ jobs:
         name: Wrapper.x86_64.${{ env.SHA_SHORT }}
         path: |
           rootfs
-          wrapper
+          wrapper.exe
           Dockerfile
 
   docker:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Set up Docker
+      uses: crazy-max/ghaction-setup-docker@v2
+      with:
+        version: latest
+        daemon-config: |
+          {
+            "experimental": true
+          }
 
     - name: Log in to GitHub Container Registry (GHCR)
       uses: docker/login-action@v2
@@ -63,14 +74,16 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
 
     - name: Get Commit SHA
-      run: echo "SHA_SHORT=x86_64" >> $GITHUB_ENV
+      run: echo "SHA_SHORT=x86_64" >> $env:GITHUB_ENV
+      shell: pwsh
 
     - name: Build and Push Docker Image to GHCR
       run: |
-        IMAGE_NAME="ghcr.io/genzpn/wrapper"
+        $IMAGE_NAME="ghcr.io/genzpn/wrapper"
         
-        docker build -t ${IMAGE_NAME}:${SHA_SHORT} .
-        docker tag ${IMAGE_NAME}:${SHA_SHORT} ${IMAGE_NAME}:latest
+        docker build -t ${IMAGE_NAME}:${env:SHA_SHORT} .
+        docker tag ${IMAGE_NAME}:${env:SHA_SHORT} ${IMAGE_NAME}:latest
 
-        docker push ${IMAGE_NAME}:${SHA_SHORT}
+        docker push ${IMAGE_NAME}:${env:SHA_SHORT}
         docker push ${IMAGE_NAME}:latest
+      shell: pwsh

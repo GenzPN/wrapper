@@ -1,3 +1,13 @@
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+
 #include <errno.h>
 #include <setjmp.h>
 #include <signal.h>
@@ -7,9 +17,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 
 #include "import.h"
@@ -327,7 +334,7 @@ inline static void *getKdContext(const char *const adam,
     union std_string fpsCert = new_std_string(fairplayCert);
 
     struct shared_ptr persistK = {.obj = NULL};
-    _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_S8_(
+    _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_(
         &persistK, FHinstance, &defaultId, &defaultId, &keyUri, &keyFormat,
         &keyFormatVer, &serverUri, &protocolType, &fpsCert);
 
@@ -587,6 +594,14 @@ static inline void *new_socket_m3u8(void *args) {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef _WIN32
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+        fprintf(stderr, "WSAStartup failed\n");
+        return EXIT_FAILURE;
+    }
+#endif
+
     cmdline_parser(argc, argv, &args_info);
 
     init();
@@ -612,4 +627,9 @@ int main(int argc, char *argv[]) {
     pthread_detach(m3u8_thread);
     
     return new_socket();
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    return 0;
 }

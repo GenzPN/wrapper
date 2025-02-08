@@ -1,17 +1,24 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(wrapper)
-include(ExternalProject)
+
+# Windows configurations
+if(WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0601)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
-set(ANDROID_NDK_PATH "$ENV{HOME}/android-ndk-r27c")
-set(TOOLCHAIN "${ANDROID_NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64")
+# Update NDK path for Windows
+set(ANDROID_NDK_PATH "$ENV{USERPROFILE}/android-ndk-r27c")
+set(TOOLCHAIN "${ANDROID_NDK_PATH}/toolchains/llvm/prebuilt/windows-x86_64")
 
-set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/x86_64-linux-android35-clang")
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/bin/x86_64-linux-android35-clang++")
-set(C_COMPILER "${TOOLCHAIN}/bin/clang")
+# Update compiler paths for Windows
+set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/x86_64-linux-android35-clang.exe")
+set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/bin/x86_64-linux-android35-clang++.exe")
+set(C_COMPILER "${TOOLCHAIN}/bin/clang.exe")
 
 set(CMAKE_C_FLAGS "-Wall -Werror -O3")
 set(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
@@ -25,6 +32,10 @@ add_library(cmdline_object OBJECT ${CMDLINE_SOURCE})
 add_library(handle_object OBJECT ${HANDLE_SOURCE})
 
 add_executable(main ${MAIN_SOURCE} $<TARGET_OBJECTS:cmdline_object> $<TARGET_OBJECTS:handle_object>)
+
+if(WIN32)
+    target_link_libraries(main wsock32 ws2_32)
+endif()
 
 set_target_properties(main PROPERTIES 
     COMPILE_DEFINITIONS "MyRelease"

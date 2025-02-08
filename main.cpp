@@ -1,3 +1,13 @@
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
+#else 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
+
 #include <cstdio>
 #include <exception>
 #include <functional>
@@ -9,7 +19,7 @@ extern "C" uint8_t handle_cpp(int fd) {
         handle(fd);
         return 1;
     } catch (const std::exception &e) {
-        fprintf(stderr, "[!] catched an exception: %s\n", e.what());
+        fprintf(stderr, "[!] caught an exception: %s\n", e.what());
         return 0;
     }
 }
