@@ -1,4 +1,4 @@
-name: Build for arm64
+name: Build and Push for arm64
 
 on:
   push:
@@ -8,44 +8,59 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install aria2
-      run: sudo apt install aria2 -y
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y aria2 gcc-aarch64-linux-gnu
 
     - name: Install LLVM
       run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 
-    - name: Install cross complier
-      run: sudo apt install gcc-aarch64-linux-gnu -y
-    
     - name: Set up Android NDK r27c
       run: | 
         aria2c -o android-ndk-r27c-linux.zip https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
         unzip -q -d ~ android-ndk-r27c-linux.zip
-      
+
     - name: Build
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=~/android-ndk-r27c/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a
         make
 
     - name: Set outputs
       id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}
+        name: Wrapper.arm64.${{ env.sha_short }}
         include-hidden-files: true
         path: |
           rootfs
           wrapper
           Dockerfile
 
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Log in to GitHub Container Registry (GHCR)
+      run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+    - name: Build and Push Docker Image (arm64)
+      run: |
+        docker buildx create --use
+        docker buildx build --platform linux/arm64 \
+          -t ghcr.io/genzpn/wrapper:arm64-${{ env.sha_short }} \
+          -t ghcr.io/genzpn/wrapper:arm64-latest \
+          --push .
