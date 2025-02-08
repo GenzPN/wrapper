@@ -37,13 +37,13 @@ jobs:
       shell: pwsh
 
     - name: Set outputs
-      run: echo "SHA_SHORT=x86_64" >> $env:GITHUB_ENV
+      run: echo "SHA_SHORT=Windows.x86_64" >> $env:GITHUB_ENV
       shell: pwsh
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.x86_64.${{ env.SHA_SHORT }}
+        name: Wrapper.Windows.x86_64.${{ env.SHA_SHORT }}
         path: |
           rootfs
           wrapper.exe
@@ -74,7 +74,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
 
     - name: Get Commit SHA
-      run: echo "SHA_SHORT=x86_64" >> $env:GITHUB_ENV
+      run: echo "SHA_SHORT=Windows.x86_64" >> $env:GITHUB_ENV
       shell: pwsh
 
     - name: Build and Push Docker Image to GHCR
