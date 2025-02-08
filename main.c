@@ -24,6 +24,31 @@
 #include "subhook/subhook.c"
 #endif
 
+#ifdef _WIN32
+// Windows-specific socket definitions
+#define SOCK_CLOEXEC 0
+#define accept4(a,b,c,d) accept((a),(b),(c))
+
+// Windows environment variable handling
+static inline void set_env(const char *name, const char *value) {
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "%s=%s", name, value);
+    _putenv(buf);
+}
+
+// Windows socket compatibility
+static inline int setsockopt_compat(int fd, int level, int optname, const int *optval, socklen_t optlen) {
+    return setsockopt(fd, level, optname, (const char *)optval, optlen);
+}
+
+#define EHOSTDOWN WSAENETDOWN
+#define ENONET WSAENETDOWN
+#else
+#include <sys/wait.h>
+#define set_env(name, value) setenv(name, value, 1)
+#define setsockopt_compat(fd, level, optname, optval, optlen) setsockopt(fd, level, optname, optval, optlen)
+#endif
+
 static struct shared_ptr apInf;
 static uint8_t leaseMgr[16];
 struct gengetopt_args_info args_info;
@@ -151,11 +176,11 @@ static inline void init() {
 
     // raise(SIGSTOP);
     fprintf(stderr, "[+] starting...\n");
-    setenv("ANDROID_DNS_MODE", "local", 1);
+    set_env("ANDROID_DNS_MODE", "local");
     if (args_info.proxy_given) {
         fprintf(stderr, "[+] Using proxy %s", args_info.proxy_arg);
-        setenv("http_proxy", args_info.proxy_arg, 1);
-        setenv("https_proxy", args_info.proxy_arg, 1);
+        set_env("http_proxy", args_info.proxy_arg);
+        set_env("https_proxy", args_info.proxy_arg);
     }
 
     static const char *resolvers[2] = {"1.1.1.1", "1.0.0.1"};
@@ -410,26 +435,27 @@ void handle(const int connfd) {
 
 extern uint8_t handle_cpp(int);
 
-inline static int new_socket() {
-    const int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
-    if (fd == -1) {
+static int new_socket(void) {
+    const int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (fd < 0) {
         perror("socket");
-        return EXIT_FAILURE;
+        return -1;
     }
+
     const int optval = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+    setsockopt_compat(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
     static struct sockaddr_in serv_addr = {.sin_family = AF_INET};
     inet_pton(AF_INET, args_info.host_arg, &serv_addr.sin_addr);
     serv_addr.sin_port = htons(args_info.decrypt_port_arg);
     if (bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
         perror("bind");
-        return EXIT_FAILURE;
+        return -1;
     }
 
     if (listen(fd, 5) == -1) {
         perror("listen");
-        return EXIT_FAILURE;
+        return -1;
     }
 
     fprintf(stderr, "[!] listening %s:%d\n", args_info.host_arg, args_info.decrypt_port_arg);
@@ -447,7 +473,7 @@ inline static int new_socket() {
                 errno == ENETUNREACH)
                 continue;
             perror("accept4");
-            return EXIT_FAILURE;
+            return -1;
         }
 
         if (!handle_cpp(connfd)) {
@@ -462,7 +488,7 @@ inline static int new_socket() {
 
         if (close(connfd) == -1) {
             perror("close");
-            return EXIT_FAILURE;
+            return -1;
         }
     }
 }
@@ -547,23 +573,26 @@ void handle_m3u8(const int connfd) {
     }
 }
 
-static inline void *new_socket_m3u8(void *args) {
-    const int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
-    if (fd == -1) {
-        perror("socket");
+static int new_socket_m3u8(void) {
+    const int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (fd < 0) {
+        return -1;
     }
+
     const int optval = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+    setsockopt_compat(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
     static struct sockaddr_in serv_addr = {.sin_family = AF_INET};
     inet_pton(AF_INET, args_info.host_arg, &serv_addr.sin_addr);
     serv_addr.sin_port = htons(args_info.m3u8_port_arg);
     if (bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
         perror("bind");
+        return -1;
     }
 
     if (listen(fd, 5) == -1) {
         perror("listen");
+        return -1;
     }
 
     fprintf(stderr, "[!] listening m3u8 request on %s:%d\n", args_info.host_arg, args_info.m3u8_port_arg);
