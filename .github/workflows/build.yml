@@ -1,4 +1,4 @@
-name: Build and Deploy to Docker & GHCR
+name: Build and Deploy to GHCR
 
 on:
   push:
@@ -55,12 +55,6 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
     - name: Log in to GitHub Container Registry (GHCR)
       uses: docker/login-action@v2
       with:
@@ -68,14 +62,12 @@ jobs:
         username: ${{ secrets.GHCR_USERNAME }}
         password: ${{ secrets.GHCR_TOKEN }}
 
-    - name: Build and Push Docker Image
+    - name: Build and Push Docker Image to GHCR
       run: |
-        docker build -t genzpn/wrapper:${{ env.sha_short }} .
-        docker tag genzpn/wrapper:${{ env.sha_short }} genzpn/wrapper:latest
-        docker push genzpn/wrapper:${{ env.sha_short }}
-        docker push genzpn/wrapper:latest
+        IMAGE_NAME="ghcr.io/genzpn/wrapper"
+        
+        docker build -t ${IMAGE_NAME}:${{ env.sha_short }} .
+        docker tag ${IMAGE_NAME}:${{ env.sha_short }} ${IMAGE_NAME}:latest
 
-        docker tag genzpn/wrapper:${{ env.sha_short }} ghcr.io/genzpn/wrapper:${{ env.sha_short }}
-        docker tag genzpn/wrapper:latest ghcr.io/genzpn/wrapper:latest
-        docker push ghcr.io/genzpn/wrapper:${{ env.sha_short }}
-        docker push ghcr.io/genzpn/wrapper:latest
+        docker push ${IMAGE_NAME}:${{ env.sha_short }}
+        docker push ${IMAGE_NAME}:latest
