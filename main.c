@@ -358,7 +358,7 @@ inline static void *getKdContext(const char *const adam,
     union std_string fpsCert = new_std_string(fairplayCert);
 
     struct shared_ptr persistK = {.obj = NULL};
-    _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_(
+    _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_S8_(
         &persistK, FHinstance, &defaultId, &defaultId, &keyUri, &keyFormat,
         &keyFormatVer, &serverUri, &protocolType, &fpsCert);
 
@@ -628,7 +628,11 @@ static void* new_socket_m3u8(void* arg) {
 #ifdef __cplusplus
 extern "C" {
 #endif
-void _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_S8_(void);
+void _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_S8_(
+    struct shared_ptr *ret, void *sessCtrlInstance, union std_string *arg1, 
+    union std_string *arg2, union std_string *arg3, union std_string *arg4,
+    union std_string *arg5, union std_string *arg6, union std_string *arg7,
+    union std_string *arg8);
 #ifdef __cplusplus
 }
 #endif
