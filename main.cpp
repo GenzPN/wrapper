@@ -1,7 +1,6 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#pragma comment(lib, "ws2_32.lib")
 #else 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -9,6 +8,7 @@
 #endif
 
 #include <cstdio>
+#include <cstdint>
 #include <exception>
 #include <functional>
 
@@ -32,5 +32,7 @@ static void pbErrCb(void *) {
     fprintf(stderr, "[.] playback error\n");
 }
 
-extern "C" std::function<void (int const&)> endLeaseCallback(endLeaseCb);
-extern "C" std::function<void (void *)> pbErrCallback(pbErrCb);
+extern "C" {
+    std::function<void (int const&)> endLeaseCallback = endLeaseCb;
+    std::function<void (void *)> pbErrCallback = pbErrCb;
+}
