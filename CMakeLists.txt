@@ -12,15 +12,7 @@ endif()
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
-# Update NDK path for Windows
-set(ANDROID_NDK_PATH "$ENV{USERPROFILE}/android-ndk-r27c")
-set(TOOLCHAIN "${ANDROID_NDK_PATH}/toolchains/llvm/prebuilt/windows-x86_64")
-
-# Update compiler paths for Windows
-set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/x86_64-linux-android35-clang.exe")
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/bin/x86_64-linux-android35-clang++.exe")
-set(C_COMPILER "${TOOLCHAIN}/bin/clang.exe")
-
+# Set compiler flags
 set(CMAKE_C_FLAGS "-Wall -Werror -O3")
 set(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
 
@@ -76,7 +68,7 @@ ExternalProject_Add(
     PREFIX ${CMAKE_BINARY_DIR}
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ${C_COMPILER} -O3 -Wall -o wrapper ${WRAPPER_SOURCE}
+    BUILD_COMMAND ${CMAKE_C_COMPILER} -O3 -Wall -o ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.exe ${CMAKE_CURRENT_SOURCE_DIR}/${WRAPPER_SOURCE}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
     DEPENDS main
