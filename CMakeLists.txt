@@ -6,11 +6,11 @@ include(ExternalProject)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
-set(ANDROID_NDK_PATH "$ENV{HOME}/android-ndk-r23b")
+set(ANDROID_NDK_PATH "$ENV{HOME}/android-ndk-r27c")
 set(TOOLCHAIN "${ANDROID_NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64")
 
-set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-android22-clang")
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-android22-clang++")
+set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-android35-clang")
+set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-android35-clang++")
 set(C_COMPILER "${TOOLCHAIN}/bin/clang")
 
 set(CMAKE_C_FLAGS "-g -Wall -Werror")
