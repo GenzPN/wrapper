@@ -1,47 +1,47 @@
-name: Build and Push for arm64
+name: Build and Deploy to GHCR
 
 on:
   push:
-    branches: [ "arm64" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "arm64" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y aria2 gcc-aarch64-linux-gnu
+        sudo apt install -y aria2 cmake make
 
     - name: Install LLVM
       run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-
+    
     - name: Set up Android NDK r27c
-      run: | 
+      run: |
         aria2c -o android-ndk-r27c-linux.zip https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
         unzip -q -d ~ android-ndk-r27c-linux.zip
-
-    - name: Build
+    
+    - name: Build Project
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=~/android-ndk-r27c/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a
+        cmake ..
         make
 
     - name: Set outputs
       id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      run: echo "SHA_SHORT=x86_64" >> $GITHUB_ENV
 
-    - name: Upload artifact
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.arm64.${{ env.sha_short }}
-        include-hidden-files: true
+        name: Wrapper.x86_64.${{ env.SHA_SHORT }}
         path: |
           rootfs
           wrapper
@@ -52,15 +52,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
     - name: Log in to GitHub Container Registry (GHCR)
-      run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ secrets.GHCR_USERNAME }}
+        password: ${{ secrets.GHCR_TOKEN }}
 
-    - name: Build and Push Docker Image (arm64)
+    - name: Get Commit SHA
+      run: echo "SHA_SHORT=x86_64" >> $GITHUB_ENV
+
+    - name: Build and Push Docker Image to GHCR
       run: |
-        docker buildx create --use
-        docker buildx build --platform linux/arm64 \
-          -t ghcr.io/genzpn/wrapper:arm64-${{ env.sha_short }} \
-          -t ghcr.io/genzpn/wrapper:arm64-latest \
-          --push .
+        IMAGE_NAME="ghcr.io/genzpn/wrapper"
+        
+        docker build -t ${IMAGE_NAME}:${SHA_SHORT} .
+        docker tag ${IMAGE_NAME}:${SHA_SHORT} ${IMAGE_NAME}:latest
+
+        docker push ${IMAGE_NAME}:${SHA_SHORT}
+        docker push ${IMAGE_NAME}:latest
