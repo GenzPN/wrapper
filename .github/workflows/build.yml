@@ -36,12 +36,12 @@ jobs:
 
     - name: Set outputs
       id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.x86_64.${{ env.sha_short }}
+        name: Wrapper.x86_64.${{ env.SHA_SHORT }}
         path: |
           rootfs
           wrapper
@@ -62,12 +62,15 @@ jobs:
         username: ${{ secrets.GHCR_USERNAME }}
         password: ${{ secrets.GHCR_TOKEN }}
 
+    - name: Get Commit SHA
+      run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
     - name: Build and Push Docker Image to GHCR
       run: |
-        IMAGE_NAME="ghcr.io/genzpn/wrapper"
+        IMAGE_NAME="ghcr.io/genzpn/wrapper:x86"
         
-        docker build -t ${IMAGE_NAME}:${{ env.sha_short }} .
-        docker tag ${IMAGE_NAME}:${{ env.sha_short }} ${IMAGE_NAME}:latest
+        docker build -t ${IMAGE_NAME}:${SHA_SHORT} .
+        docker tag ${IMAGE_NAME}:${SHA_SHORT} ${IMAGE_NAME}:latest
 
-        docker push ${IMAGE_NAME}:${{ env.sha_short }}
+        docker push ${IMAGE_NAME}:${SHA_SHORT}
         docker push ${IMAGE_NAME}:latest
