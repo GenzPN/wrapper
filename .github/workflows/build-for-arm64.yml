@@ -11,7 +11,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -19,7 +18,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y aria2 cmake make
+        sudo apt install -y aria2 cmake make gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     - name: Install LLVM
       run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
@@ -33,17 +32,17 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake .. -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
         make
 
     - name: Set outputs
       id: vars
-      run: echo "SHA_SHORT=x86_64" >> $GITHUB_ENV
+      run: echo "SHA_SHORT=arm64" >> $GITHUB_ENV
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.x86_64.${{ env.SHA_SHORT }}
+        name: Wrapper.arm64.${{ env.SHA_SHORT }}
         path: |
           rootfs
           wrapper
@@ -65,7 +64,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
 
     - name: Get Commit SHA
-      run: echo "SHA_SHORT=x86_64" >> $GITHUB_ENV
+      run: echo "SHA_SHORT=arm64" >> $GITHUB_ENV
 
     - name: Build and Push Docker Image to GHCR
       run: |
