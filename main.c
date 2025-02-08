@@ -573,10 +573,11 @@ void handle_m3u8(const int connfd) {
     }
 }
 
-static int new_socket_m3u8(void) {
+// Fix function signature for pthread_create compatibility
+static void* new_socket_m3u8(void* arg) {
     const int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (fd < 0) {
-        return -1;
+        return NULL;
     }
 
     const int optval = 1;
@@ -587,12 +588,12 @@ static int new_socket_m3u8(void) {
     serv_addr.sin_port = htons(args_info.m3u8_port_arg);
     if (bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
         perror("bind");
-        return -1;
+        return NULL;
     }
 
     if (listen(fd, 5) == -1) {
         perror("listen");
-        return -1;
+        return NULL;
     }
 
     fprintf(stderr, "[!] listening m3u8 request on %s:%d\n", args_info.host_arg, args_info.m3u8_port_arg);
@@ -619,7 +620,18 @@ static int new_socket_m3u8(void) {
             perror("close");
         }
     }
+
+    return NULL;
 }
+
+// Add proper declaration for the C++ function
+#ifdef __cplusplus
+extern "C" {
+#endif
+void _ZN21SVFootHillSessionCtrl16getPersistentKeyERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEES8_S8_S8_S8_S8_S8_S8_(void);
+#ifdef __cplusplus
+}
+#endif
 
 int main(int argc, char *argv[]) {
 #ifdef _WIN32
@@ -651,7 +663,7 @@ int main(int argc, char *argv[]) {
     FHinstance = _ZN21SVFootHillSessionCtrl8instanceEv();
 
     pthread_t m3u8_thread;
-    pthread_create(&m3u8_thread, NULL, &new_socket_m3u8, NULL);
+    pthread_create(&m3u8_thread, NULL, new_socket_m3u8, NULL);
     pthread_detach(m3u8_thread);
     
     return new_socket();
