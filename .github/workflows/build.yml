@@ -67,7 +67,7 @@ jobs:
 
     - name: Build and Push Docker Image to GHCR
       run: |
-        IMAGE_NAME="ghcr.io/genzpn/wrapper:x86"
+        IMAGE_NAME="ghcr.io/genzpn/wrapper"
         
         docker build -t ${IMAGE_NAME}:${SHA_SHORT} .
         docker tag ${IMAGE_NAME}:${SHA_SHORT} ${IMAGE_NAME}:latest
