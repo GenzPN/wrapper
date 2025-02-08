@@ -24,8 +24,10 @@ jobs:
         update: true
         install: >-
           mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-g++
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-make
+          make
         
     - name: Download Android NDK
       run: |
@@ -35,10 +37,18 @@ jobs:
 
     - name: Build Project
       shell: msys2 {0}
+      env:
+        CC: gcc
+        CXX: g++
       run: |
+        export PATH="/mingw64/bin:$PATH"
         mkdir build
         cd build
-        cmake -G "Unix Makefiles" ..
+        cmake -G "Unix Makefiles" \
+          -DCMAKE_C_COMPILER=gcc \
+          -DCMAKE_CXX_COMPILER=g++ \
+          -DCMAKE_MAKE_PROGRAM=make \
+          ..
         make
 
     - name: Set outputs
